@@ -9,7 +9,7 @@ Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
 let data = Helpers.Web.getInput 3
 
 let getLineSum s =
-    let ms = System.Text.RegularExpressions.Regex.Matches(s, "mul\((\d+),(\d+)\)")
+    let ms = Regex.Matches(s, "mul\((\d+),(\d+)\)")
 
     ms
     |> Seq.sumBy
@@ -19,11 +19,18 @@ let getLineSum s =
 
 let ans1 = data |> Seq.sumBy getLineSum
 
-data[0]
-
 ans1
 
 /// Part 2
+
+data[0]
+
+let dos =
+    Regex.Matches(data[0], "do\(\)") |> Seq.map (fun m -> m.Index)
+let donts =
+    Regex.Matches(data[0], "don't\(\)") |> Seq.map (fun m -> m.Index)
+let mults =
+    Regex.Matches(data[0], "mul\((\d+),(\d+)\)") |> Seq.map (fun m -> m.Index)
 
 let ans2 = data
 
