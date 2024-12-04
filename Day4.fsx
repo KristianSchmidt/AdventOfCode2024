@@ -4,9 +4,54 @@ open System
 
 Environment.CurrentDirectory <- __SOURCE_DIRECTORY__
 
-let data = Helpers.Web.getInput 4
+let data = 
+    Helpers.Web.getInput 4
+    |> Array.map (fun s -> s.ToCharArray())
 
-let ans1 = data
+let forward = [|'X'; 'M'; 'A'; 'S'|]
+let backward = [|'S'; 'A'; 'M'; 'X'|]
+
+let isXmas arr = arr = forward || arr = backward
+
+let transpose data =
+    data
+    |> Array.mapi (fun x arr -> arr |> Array.mapi (fun y _ -> data[y][x]))
+
+let horizontal data =
+    data
+    |> Array.map (Array.windowed 4)
+    |> Array.reduce Array.append
+    |> Array.filter isXmas
+    |> Array.length
+
+let vertical data =
+    data
+    |> transpose
+    |> horizontal
+    
+let isInside (i,j) = i >= 0 && i <= data.Length - 1 &&
+                     j >= 0 && j <= data.Length - 1
+
+let diagonals (data: char array array) =
+    seq {
+        for x in 0 .. data.Length - 1 do
+            for y in 0 .. data.Length - 1 do
+                yield [|(x,y); (x-1, y-1); (x-2, y-2); (x-3, y-3);|]
+                yield [|(x,y); (x+1, y-1); (x+2, y-2); (x+3, y-3);|]
+                yield [|(x,y); (x+1, y+1); (x+2, y+2); (x+3, y+3);|]
+                yield [|(x,y); (x-1, y+1); (x-2, y+2); (x-3, y+3);|]
+    }
+    |> Seq.filter (Array.forall isInside)
+    |> Seq.toArray
+    |> Array.map (Array.map (fun (x,y) -> data[x][y]))
+    |> Array.filter isXmas
+    |> Array.length
+    |> (fun i -> i / 2)
+
+let ans1 =
+    diagonals data +
+    horizontal data +
+    vertical data
 
 ans1
 
