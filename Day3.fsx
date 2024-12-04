@@ -23,15 +23,28 @@ ans1
 
 /// Part 2
 
-data[0]
+let getLineSum2 s =
+    let dos =
+        Regex.Matches(s, "do\(\)") |> Seq.map (fun m -> m.Index) |> Set.ofSeq
+    let donts =
+        Regex.Matches(s, "don't\(\)") |> Seq.map (fun m -> m.Index) |> Set.ofSeq
 
-let dos =
-    Regex.Matches(data[0], "do\(\)") |> Seq.map (fun m -> m.Index)
-let donts =
-    Regex.Matches(data[0], "don't\(\)") |> Seq.map (fun m -> m.Index)
-let mults =
-    Regex.Matches(data[0], "mul\((\d+),(\d+)\)") |> Seq.map (fun m -> m.Index)
+    let isMostRecentDo i =
+        let mostRecentDo = Array.tryFindBack (fun i -> Set.contains i dos) [|0..i|]
+        let mostRecentDont = Array.tryFindBack (fun i -> Set.contains i donts) [|0..i|]
+        match mostRecentDo, mostRecentDont with
+        | Some _, None -> true
+        | None, Some _ -> false
+        | Some x, Some y -> x > y
+        | _ -> true
 
-let ans2 = data
+    let mults =
+        Regex.Matches(s, "mul\((\d+),(\d+)\)")
+        |> Seq.filter (fun m -> isMostRecentDo m.Index)
+
+    mults |> Seq.sumBy (fun m -> (int64 m.Groups[1].Value)*(int64 m.Groups[2].Value))
+
+// In this part it needs to be one line, so it remembers if the last part of a line is a don't() instruction
+let ans2 = getLineSum2 (String.Join('\n', data))
 
 ans2
