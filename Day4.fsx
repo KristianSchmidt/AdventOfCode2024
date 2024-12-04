@@ -57,6 +57,24 @@ ans1
 
 /// Part 2
 
-let ans2 = data
+let checkIfValid (data: char array array) (x,y) =
+    let isA = data[x][y] = 'A'
+    let topLeftDownRight =
+        let arr = [|data[x-1][y-1];data[x+1][y+1]|]
+        arr = [|'M';'S'|] || arr = [|'S';'M'|]
+    let downLeftTopRight =
+        let arr = [|data[x-1][y+1];data[x+1][y-1]|]
+        arr = [|'M';'S'|] || arr = [|'S';'M'|]
+    isA && topLeftDownRight && downLeftTopRight
+
+let ans2 =
+    seq {
+        for x in 1 .. data.Length - 2 do
+            for y in 1 .. data.Length - 2 do
+                if checkIfValid data (x,y) then
+                    yield (x,y)
+    }
+    |> Array.ofSeq
+    |> Array.length
 
 ans2
