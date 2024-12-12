@@ -51,7 +51,7 @@ let nonNeighbors (x,y) =
 
 let perimiterNeighbors (area: Set<int*int*(int*int)>) (x,y,dir) =
     [|(x-1,y,dir); (x+1, y, dir); (x, y-1, dir); (x, y+1, dir);|]
-    |> Array.filter (fun (x',y',dir') -> Set.contains (x',y',dir') area)// || ((x' = -1 || x' = data.Length) && (y' = -1 || y' = data[0].Length)))
+    |> Array.filter (fun (x',y',dir') -> Set.contains (x',y',dir') area)
 
 let getSides area =    
     let rec f pointsLeft perimeters =
