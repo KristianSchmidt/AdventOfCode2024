@@ -44,6 +44,36 @@ ans1
 
 /// Part 2
 
-let ans2 = data
+let nonNeighbors (x,y) =
+    [|(x-1,y); (x+1, y); (x, y-1); (x, y+1);|]
+    |> Array.filter (fun (x',y') -> (isInside (x',y') && data[x][y] <> data[x'][y']) || ((x' = -1 || x' = data.Length) || (y' = -1 || y' = data[0].Length)))
+    |> Array.map (fun (x',y') -> (x',y',(x-x',y-y')))
+
+let perimiterNeighbors (area: Set<int*int*(int*int)>) (x,y,dir) =
+    [|(x-1,y,dir); (x+1, y, dir); (x, y-1, dir); (x, y+1, dir);|]
+    |> Array.filter (fun (x',y',dir') -> Set.contains (x',y',dir') area)// || ((x' = -1 || x' = data.Length) && (y' = -1 || y' = data[0].Length)))
+
+let getSides area =    
+    let rec f pointsLeft perimeters =
+        if Set.isEmpty pointsLeft then
+            perimeters
+        else
+            let p = Set.minElement pointsLeft
+            let newPerimeter = Helpers.BFS.bfs (perimiterNeighbors pointsLeft) p |> Map.keys |> Set.ofSeq
+            let newPerimeters = Set.add newPerimeter perimeters
+            let newPointsLeft = Set.difference pointsLeft newPerimeter
+            f newPointsLeft newPerimeters
+
+    f area Set.empty
+
+let priceBulk (area: Set<int*int>) =
+    let perimeter = area |> Set.map nonNeighbors |> Seq.toArray |> Array.collect id |> Set.ofArray
+    let sides = getSides perimeter |> Set.count
+    sides * (Set.count area)
+
+let ans2 = getAreas ()
+           |> Set.toArray
+           |> Array.sumBy priceBulk
+
 
 ans2
