@@ -10,23 +10,23 @@ let data =
     |> Array.map (fun s -> s.ToCharArray())
     |> Helpers.toGridMap
 
-//let data = """###############
-//#.......#....E#
-//#.#.###.#.###.#
-//#.....#.#...#.#
-//#.###.#####.#.#
-//#.#.#.......#.#
-//#.#.#####.###.#
-//#...........#.#
-//###.#.#####.#.#
-//#...#.....#.#.#
-//#.#.#.###.#.#.#
-//#.....#...#.#.#
-//#.###.#.#.#.#.#
-//#S..#.....#...#
-//###############""" |> Helpers.split "\n"
-//                   |> Array.map (fun s -> s.ToCharArray())
-//                   |> Helpers.toGridMap
+let data = """###############
+#.......#....E#
+#.#.###.#.###.#
+#.....#.#...#.#
+#.###.#####.#.#
+#.#.#.......#.#
+#.#.#####.###.#
+#...........#.#
+###.#.#####.#.#
+#...#.....#.#.#
+#.#.#.###.#.#.#
+#.....#...#.#.#
+#.###.#.#.#.#.#
+#S..#.....#...#
+###############""" |> Helpers.split "\n"
+                   |> Array.map (fun s -> s.ToCharArray())
+                   |> Helpers.toGridMap
 
 type Direction = | E | W | N | S
 type Pos = int*int*Direction
@@ -36,7 +36,7 @@ type CostFunc = Pos -> Pos -> int
 let isGoal ((cx,cy,_): Pos) ((gx,gy,_): Pos) =
     cx = gx && cy = gy
 
-let astar start goal (adj : Pos -> Pos array) (cost : CostFunc) (heuristic : CostFunc) =
+let astar start goal (adj : Pos -> Pos array) isGoal (cost : CostFunc) (heuristic : CostFunc) =
     let frontier = PriorityQueue<Pos,int>()
     frontier.Enqueue(start, 0)
     let cameFrom = Dictionary<Pos,Pos>()
@@ -61,7 +61,7 @@ let astar start goal (adj : Pos -> Pos array) (cost : CostFunc) (heuristic : Cos
                     frontier.Enqueue(next, priority)
                     cameFrom[next] <- current
 
-    printfn "Processed %i nodes" processed
+    //printfn "Processed %i nodes" processed
     cameFrom, costSoFar
 
 let (sx,sy) = data |> Map.findKey (fun k v -> v = 'S')
@@ -95,29 +95,88 @@ let getPath (endX,endY) (cameFrom: Map<Pos,Pos>) =
         | Some x -> f (x :: acc) x
         | None -> acc
 
-    let endPos = cameFrom |> Map.keys |> Seq.find (fun (x,y,_) -> x = endX && y = endY)
-    f [(endX,endY,E)] endPos |> List.tail
+    let endPosOpt = cameFrom |> Map.keys |> Seq.tryFind (fun (x,y,_) -> x = endX && y = endY)
+    match endPosOpt with
+    | Some endPos -> f [(endX,endY,E)] endPos |> List.tail |> Some
+    | None -> None
 
 let toMap d =
     d
     |> Seq.map (fun (k: KeyValuePair<_,_>) -> k.Key, k.Value)
     |> Map.ofSeq
 
-astar (sx,sy,E) (ex,ey,E) adj cost manhattan
-|> fst
-|> toMap 
-|> getPath (ex,ey)
+let getCost x =
+    x
+    |> snd
+    |> toMap 
+    |> Map.filter (fun (x,y,_) _ -> x = ex && y = ey)
+    |> Map.toSeq
+    |> Seq.head
+    |> snd
 
-astar (sx,sy,E) (ex,ey,E) adj cost manhattan
-|> snd
-|> toMap 
-|> Map.filter (fun (x,y,_) _ -> x = ex && y = ey)
-
-let ans1 = data
+let ans1 = astar (sx,sy,E) (ex,ey,E) adj isGoal cost manhattan |> getCost
 
 ans1
 
 /// Part 2
+
+let toCoord (x,y,_) = (x,y)
+    
+let getCost2 (ex,ey) x =
+    x
+    |> snd
+    |> toMap
+    |> Map.filter (fun (x,y,_) _ -> x = ex && y = ey)
+    |> Map.toSeq
+    |> Seq.head
+    |> snd
+
+let getCost3 (ex,ey,p) x =
+    x
+    |> snd
+    |> toMap
+    |> Map.filter (fun k _ -> k = (ex,ey,p))
+    |> Map.toSeq
+    |> Seq.head
+    |> snd
+
+
+let calcPart2 () =
+    let origCost = astar (sx,sy,E) (ex,ey,E) adj isGoal cost manhattan |> getCost
+    printfn "Orig cost: %i" origCost
+    let mutable nodes = List.empty
+    let positions = data |> Map.filter (fun k v -> v = '.') |> Map.toList |> List.map fst //|> List.collect (fun (x,y) -> [(x,y,E);(x,y,W);(x,y,N);(x,y,S)])
+    for (x,y) in positions do
+        let dir' = E
+        let p = (x,y,dir')
+        let calc1 = astar (sx,sy,E) p adj (=) cost manhattan
+        let calc2 = astar p (ex,ey,E) adj isGoal cost manhattan
+        let cost1 = getCost3 (x,y,dir') calc1 // need to filter on direction here too
+        let cost2 = getCost2 (ex,ey) calc2
+        let totalCost = cost1 + cost2
+        printfn "%A: %i + %i = %i" p cost1 cost2 (cost1+cost2)
+        if totalCost = origCost then
+            //printfn "Found sol %A" (x,y)
+            if List.contains (x,y) nodes |> not then
+                nodes <- (x,y) :: nodes
+
+        if not (totalCost - 4000 > origCost) then
+            for dir in [W;N;S] do
+                let p = (x,y,dir)
+                let calc1 = astar (sx,sy,E) p adj (=) cost manhattan
+                let calc2 = astar p (ex,ey,E) adj isGoal cost manhattan
+                let cost1 = getCost3 (x,y,dir) calc1 // need to filter on direction here too
+                let cost2 = getCost2 (ex,ey) calc2
+                let totalCost = cost1 + cost2
+                printfn "%A: %i + %i = %i" p cost1 cost2 (cost1+cost2)
+                if totalCost = origCost then
+                    //printfn "Found sol %A" (x,y)
+                    if List.contains (x,y) nodes |> not then
+                        nodes <- (x,y) :: nodes
+
+    List.length nodes + 2
+
+calcPart2 ()
 
 let ans2 = data
 
