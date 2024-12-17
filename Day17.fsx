@@ -102,14 +102,15 @@ let a = ctx.MkBVConst("a", 64u)
 let mutable regA = a
 let mutable i = 0
 let mkBv var iter = ctx.MkBVConst(sprintf "%s_%i" var iter, 64u)
+let mkConst (i: int) = ctx.MkBV(i, 64u)
 
 for output in program do
     // regB = regA % 8
     let regB_0 = mkBv "b_0" i
-    solver.Add(ctx.MkEq(regB_0, ctx.MkBVSMod(regA, ctx.MkBV(8, 64u))))
+    solver.Add(ctx.MkEq(regB_0, ctx.MkBVSMod(regA, mkConst 8)))
     // regB = regB ^^^ 5
     let regB_1 = mkBv "b_1" i
-    solver.Add(ctx.MkEq(regB_1, ctx.MkBVXOR(regB_0, ctx.MkBV(5, 64u))))
+    solver.Add(ctx.MkEq(regB_1, ctx.MkBVXOR(regB_0, mkConst 5)))
     // regC = int (regA / (2^regB))
     let regC = mkBv "c" i
     solver.Add(ctx.MkEq(regC, ctx.MkBVLSHR(regA, regB_1)))
@@ -118,12 +119,12 @@ for output in program do
     solver.Add(ctx.MkEq(regB_2, ctx.MkBVXOR(regB_1, regC)))
     // regA = int (regA / (2^3))
     let regA_0 = mkBv "a_0" i
-    solver.Add(ctx.MkEq(regA_0, ctx.MkBVLSHR(regA, ctx.MkBV(3, 64u))))
+    solver.Add(ctx.MkEq(regA_0, ctx.MkBVLSHR(regA, mkConst 3)))
     // regB = regB ^^^ 6
     let regB_3 = mkBv "b_3" i
-    solver.Add(ctx.MkEq(regB_3, ctx.MkBVXOR(regB_2, ctx.MkBV(6, 64u))))
+    solver.Add(ctx.MkEq(regB_3, ctx.MkBVXOR(regB_2, mkConst 6)))
     // output regB = program[i]
-    solver.Add(ctx.MkEq(ctx.MkBVSMod(regB_3, ctx.MkBV(8, 64u)), ctx.MkBV(output, 64u)))
+    solver.Add(ctx.MkEq(ctx.MkBVSMod(regB_3, mkConst 8), mkConst output))
     // next iter, switch the regA and increase iter
     i <- i + 1
     regA <- regA_0
