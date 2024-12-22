@@ -25,7 +25,6 @@ let data = Helpers.Web.getInput 21
 *)
 
 let diff (x,y) (x',y') = (x'-x), (y'-y)
-let add  (x,y) (x',y') = (x'+x), (y'+y)
 
 let numLoc =
     function
@@ -38,11 +37,6 @@ let arrowLoc =
     function
     | 'A' -> (0,0) | '^' -> (-1,0)
     | '>' -> (0,1) | 'v' -> (-1,1) | '<' -> (-2,1)
-
-let locToArrow =
-    [|'A';'^';'<';'>';'v'|]
-    |> Array.map (fun v -> arrowLoc v, v)
-    |> Map.ofArray
 
 let horizontal x =
     if Math.Sign(float x) > 0 then
@@ -78,9 +72,6 @@ let solveArrowPath (fromKey,toKey) =
     let fromLoc, toLoc = arrowLoc fromKey, arrowLoc toKey
     let (x,y) = diff fromLoc toLoc
     match fromKey, toKey with
-//    | 'v', 'A' ->
-//        // Special case if v comes from <, then it's best to keep moving horizontally
-//        [| Array.append (horizontal x) (vertical y) |]
     | _, '<' ->
         [| Array.append (vertical y) (horizontal x) |]
     | '<', _ ->
