@@ -42,6 +42,37 @@ ans1
 
 /// Part 2
 
-let ans2 = data
+// Add a connection to self to each node since
+// that will make set intersection easier
+let data2 =
+    data
+    |> Map.map (fun k v -> v |> Set.add k)
+
+let tryCandidate (k1,k2) =
+    let overlap = Set.intersect data2[k1] data2[k2]
+    seq {
+        yield data2[k1]
+        yield data2[k2]
+        for k in overlap do
+            yield data2[k]
+    }
+    |> Set.intersectMany
+
+let ans2 =
+    seq {
+        for k1 in Map.keys data2 do
+            for k2 in Map.keys data2 do
+                if k1 <> k2 then
+                    let overlap = Set.intersect data2[k1] data2[k2]
+                    if overlap.Count > 2 then
+                        let clique = tryCandidate (k1,k2)
+                        if clique.Count = 13 then
+                            yield clique
+    }
+    |> Seq.distinct
+    |> Seq.head
+    |> Set.toArray
+    |> Array.sort
+    |> fun a -> String.Join(",",a)
 
 ans2
